@@ -1,0 +1,14 @@
+/venv/
+/lambda_packages/*
+.terraform/
+*.tfstate
+*.zip
+*.tfstate.backup
+terraform.tfvars
+.terraform.lock.hcl
+__pycache__/*
+tests/.env
+iac/etl/backend.tf
+.vscode/
+allure-report/
+allure-results/

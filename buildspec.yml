@@ -1,0 +1,73 @@
+version: 0.2
+env:
+  variables:
+  # Add all environment variables here: 
+    RAW_BUCKET: "raw-s3-conference-user-df720b8a-ohmm6c2l" # something like: raw-s3-conference-user-9fe23ed6-7re1fbmf
+    CURATED_BUCKET: "curated-s3-conference-user-df720b8a-ohmm6c2l" # something like: curated-s3-conference-user-9fe23ed6-7re1fbmf
+    CLEAN_BUCKET: "clean-s3-conference-user-df720b8a-ohmm6c2l" # something like: clean-s3-conference-user-9fe23ed6-7re1fbmf
+    SNS_TOPIC_ARN: "arn:aws:sns:eu-west-1:087559609246:etl-notifications-conference-user-df720b8a" # something like: arn:aws:sns:eu-west-1:087559609246:etl-notifications-conference-user-9fe23ed6
+    CI: "true" 
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+
+    commands:
+      - echo "Installing dependencies..."
+      - pip install -r tests/requirements.txt
+      - apt-get install -y jq
+#      TODO Exercise 3: Install allure:
+#      - npm install -g allure-commandline --save-dev
+#      - allure --version
+
+  pre_build:
+    commands:
+      - echo "Setting up the environment..."
+      - export PYTHONPATH=$PYTHONPATH:$(pwd)  # Set PYTHONPATH to include the current directory
+      - echo "Environment setup complete."
+      - echo "Fetching commit ID and branch name..."
+      # The following git commands may fail in a CodePipeline environment, consider using env vars from CodePipeline
+      - export GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD || echo $CODEBUILD_SOURCE_VERSION)
+      - export GIT_COMMIT=$(git rev-parse HEAD || echo $CODEBUILD_RESOLVED_SOURCE_VERSION)
+
+  build:
+    commands:
+      - echo "Running pytest tests..."
+      # Exercise 3: Add allure report generation and upload to S3
+      # uncomment alluredir to generate allure reports i.e:  pytest tests --alluredir=$ALLURE_RESULTS_DIR
+      - pytest tests #--alluredir=$ALLURE_RESULTS_DIR
+
+#      # Exercise 4: Execute Great Expectations tests
+#      - echo "Running Great Expectations tests..."
+#      - python tests/great_expectations/raw_validation/main.py  # Execute the Great Expectations tests
+#      - python tests/great_expectations/clean_validation/main.py  # Execute the Great Expectations tests
+      
+
+  post_build:
+    commands:
+    # Exercise 3: Add allure report generation and upload to S3
+    # uncomment the following lines to run allure report generation and upload to S3
+#      - echo "Ensuring S3 bucket structure exists"
+#      - aws s3api head-object --bucket $ALLURE_REPORT_BUCKET --key allure-report/ || aws s3api put-object --bucket $ALLURE_REPORT_BUCKET --key allure-report/
+#      - echo "Downloading existing Allure history"
+#      - aws s3 sync s3://$ALLURE_REPORT_BUCKET/history/ $ALLURE_RESULTS_DIR/history/ || true
+#      - echo "Generating Allure report"
+#      - allure generate $ALLURE_RESULTS_DIR -o allure-report --clean
+#      - echo "Uploading Allure report to S3"
+#      - aws s3 sync allure-report s3://$ALLURE_REPORT_BUCKET/ --delete
+#      - echo "Updating Allure history"
+#      - aws s3 sync allure-report/history s3://$ALLURE_REPORT_BUCKET/history/ --delete
+
+# Exercise 3: Optional Upload allure artifacts to CodeBuild
+# artifacts:
+#   files:
+#     - '**/*'
+#   name: test-output
+#   base-directory: allure-report
+
+reports:
+  pytest_report:
+    files:
+      - results.xml
+    base-directory: reports/
+    file-format: JUNITXML
